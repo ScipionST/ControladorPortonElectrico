@@ -5,7 +5,7 @@ Blinker::Blinker(const uint8_t pin) : _pin(pin) {}
 void Blinker::setup()
 {
   pinMode(_pin, OUTPUT);
-  digitalWrite(_pin, HIGH);
+  digitalWrite(_pin, LOW);
 }
 
 void Blinker::blink(const int count, const int interval)

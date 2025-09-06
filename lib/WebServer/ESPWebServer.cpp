@@ -26,6 +26,7 @@ bool ESPWebServer::isIPAllowed(AsyncWebServerRequest* request)
   const String allowedIPs[] = {
       "192.168.0.100",
       "192.168.0.150", // MOTO
+      "192.168.0.151", // NOVA
       "192.168.1.100",
   };
 

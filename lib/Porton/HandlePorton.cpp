@@ -28,9 +28,16 @@ void Porton::setup() {
   estadoPorton = DETENIDO;
 }
 
+void Porton::readSensors()
+{
+  estadoSensorStop = digitalRead(pinSensorOpen) ? ABIERTO : digitalRead(pinSensorClose) ? CERRADO : MEDIO;
+}
+
 // ABRIR
 String Porton::open()
 {
+  readSensors();
+
   if (estadoSensorStop == ABIERTO) return "El portón está abierto";
 
   if (estadoPorton == ABRIENDO) return "El portón ya se está abriendo";
@@ -42,6 +49,8 @@ String Porton::open()
 // CERRAR
 String Porton::close()
 {
+  readSensors();
+
   if (estadoSensorStop == CERRADO) return "El portón ya está cerrado";
 
   if (estadoPorton == CERRANDO) return "El portón ya se está cerrando";
@@ -68,32 +77,24 @@ String Porton::stop() {
 // CONTROL DE COMANDOS
 void Porton::handleCommand()
 {
-  if (comandoPorton == ABRIR && millis() - timerEstado >= timeoutEstado) {
-    if (!digitalRead(pinSensorOpen)) {
-      digitalWrite(pinRelayOpen, LOW);
-      estadoPorton = ABRIENDO;
-      comandoPorton = NINGUNO;
-    }
-    else {
-      estadoSensorStop = ABIERTO;
-      estadoPorton = DETENIDO;
-      comandoPorton = NINGUNO;
-      return;
-    }
+  if (comandoPorton == ABRIR && millis() - commandTimer >= commandTimeout) {
+    readSensors();
+
+    if (estadoSensorStop == ABIERTO) return;
+
+    digitalWrite(pinRelayOpen, LOW);
+    estadoPorton = ABRIENDO;
+    comandoPorton = NINGUNO;
   }
 
-  if (comandoPorton == CERRAR && millis() - timerEstado >= timeoutEstado) {
-    if (!digitalRead(pinSensorClose)) {
-      digitalWrite(pinRelayClose, LOW);
-      estadoPorton = CERRANDO;
-      comandoPorton = NINGUNO;
-    }
-    else {
-      estadoSensorStop = CERRADO;
-      estadoPorton = DETENIDO;
-      comandoPorton = NINGUNO;
-      return;
-    }
+  if (comandoPorton == CERRAR && millis() - commandTimer >= commandTimeout) {
+    readSensors();
+
+    if (estadoSensorStop == CERRADO) return;
+
+    digitalWrite(pinRelayClose, LOW);
+    estadoPorton = CERRANDO;
+    comandoPorton = NINGUNO;
   }
 }
 
@@ -103,7 +104,7 @@ void Porton::handleOpen()
   digitalWrite(pinRelayClose, HIGH);
 
   comandoPorton = ABRIR;
-  timerEstado = millis();
+  commandTimer = millis();
 }
 
 // CONTROL CIERRE
@@ -112,7 +113,7 @@ void Porton::handleClose()
   digitalWrite(pinRelayOpen, HIGH);
 
   comandoPorton = CERRAR;
-  timerEstado = millis();
+  commandTimer = millis();
 }
 
 void Porton::handleStop()
@@ -129,7 +130,7 @@ void Porton::handleStop()
     if (now - last > 50) {
       digitalWrite(pinRelayOpen, HIGH);
       estadoPorton = DETENIDO;
-      estadoSensorStop = ABIERTO;
+      readSensors();
     }
   }
 
@@ -145,7 +146,7 @@ void Porton::handleStop()
     if (now - last > 50) {
       digitalWrite(pinRelayClose, HIGH);
       estadoPorton = DETENIDO;
-      estadoSensorStop = CERRADO;
+      readSensors();
     }
   }
 
@@ -158,6 +159,7 @@ void Porton::handleStop()
 
       estadoPorton = DETENIDO;
       comandoPorton = ABRIR;
+      readSensors();
     }
   }
 }
@@ -191,6 +193,7 @@ void Porton::autoClose()
   if (timer - lastObstacle >= closeTimeout && timer - timerToClose >= closeTimeout)
   {
     comandoPorton = CERRAR;
+    readSensors();
   }
 }
 

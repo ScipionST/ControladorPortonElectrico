@@ -12,8 +12,8 @@ extern volatile bool flagClose;
 extern volatile bool flagObstacle;
 
 void flagSensorOpen(); // IRAM_ATTR (interrupciones)
-void flagSensorClose(); // IRAM_ATTR
-void flagSensorObstacle(); // IRAM_ATTR
+void flagSensorClose();
+void flagSensorObstacle();
 
 class ESPLogger; // Declaración anticipada
 
@@ -22,18 +22,16 @@ class Porton
 public:
   Porton(ESPLogger& logger);
 
-  bool sensorObstacle = false;
-
-  bool relayOpen = false;
-  bool relayClose = false;
-
-  bool stopMode = false;
-
   void setup();
 
   String open();
   String close();
   String stop();
+
+  /**
+   * Actualiza el estado de los sensores
+   */
+  void readSensors();
 
   void handleCommand();
   void handleOpen();
@@ -66,8 +64,9 @@ private:
   };
   EstadoSensorStop estadoSensorStop;
 
-  const int timeoutEstado = 1000;
-  unsigned long timerEstado = 0;
+  // Temporizadores para handleCommand()
+  const int commandTimeout = 1000; // Timeout antes de activar el comando
+  unsigned long commandTimer = 0; // Almacenar tiempo de generación de comando para contar hasta commandTimeout
 
   int closeTimeout = 6000;
   unsigned long timerToClose = 5000;
